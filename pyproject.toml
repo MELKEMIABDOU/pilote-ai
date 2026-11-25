@@ -1,0 +1,50 @@
+[project]
+name = "copilote-adv"
+version = "0.1.0"
+description = "Copilote de pré-traitement et de validation de bons de commande ADV"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.7.0",
+    "sqlalchemy>=2.0.0",
+    "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+rag = [
+    "docling>=2.0.0",
+    "transformers>=4.51.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.4.0",
+]
+
+[tool.ruff]
+# Longueur de ligne standard
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E / W: Pycodestyle (erreurs et warnings standards)
+# F: Pyflakes (imports inutilisés, variables non définies)
+# I: isort (tri automatique et propre des imports)
+# B: flake8-bugbear (détection de pièges et bugs fréquents)
+# UP: pyupgrade (modernisation automatique de la syntaxe Python)
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v --strict-markers"

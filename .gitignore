@@ -1,0 +1,25 @@
+# Environnements virtuels
+.venv/
+env/
+venv/
+# Caches Python
+__pycache__/
+*.py[cod]
+*$py.class
+# Outils de dev (Ruff, Pytest, Mypy)
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+# Fichiers secrets et configuration locale
+.env
+*.env.local
+# Documents clients (confidentiels) et sorties générées
+documents/
+outputs/
+# Fichiers système et IDE
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
