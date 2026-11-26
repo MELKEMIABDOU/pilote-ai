@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.ports.embeddings import Vector
+from app.ports.extraction import ExtractedChunk, ExtractedDocument
 from app.ports.vector_store import IndexedChunk, SearchResult
 
 
@@ -62,6 +63,28 @@ class FakeChunker:
 
     def chunk(self, document: FakeDocument) -> list[SimpleNamespace]:
         return self.chunks
+
+
+class FakeExtractor:
+    """DocumentExtractor qui renvoie des passages prédéfinis et compte ses appels."""
+
+    def __init__(self, chunks: Sequence[tuple[int | None, str]] = ()) -> None:
+        self.chunks = tuple(chunks)
+        self.calls: list[Path] = []
+
+    def extract(self, source: str | Path) -> ExtractedDocument:
+        path = Path(source)
+        self.calls.append(path)
+        return ExtractedDocument(
+            source=path.name,
+            source_type="file",
+            file_type=path.suffix,
+            pages=(),
+            chunks=tuple(
+                ExtractedChunk(chunk_id=i, page_number=page, text=text)
+                for i, (page, text) in enumerate(self.chunks, start=1)
+            ),
+        )
 
 
 class FakeEmbedder:

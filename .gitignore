@@ -18,6 +18,8 @@ htmlcov/
 # Documents clients (confidentiels) et sorties générées
 documents/
 outputs/
+# Base vectorielle locale (contient le texte des documents clients)
+data/
 # Fichiers système et IDE
 .vscode/
 .idea/

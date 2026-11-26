@@ -20,5 +20,9 @@ class EmbeddingError(CopiloteError):
     """Le modèle d'embeddings a renvoyé un résultat inattendu."""
 
 
+class VectorStoreError(CopiloteError):
+    """Le stockage vectoriel est incohérent (ex. base créée avec un autre modèle d'embeddings)."""
+
+
 class MissingDependencyError(CopiloteError, RuntimeError):
     """Une dépendance optionnelle (ex. l'extra ``rag``) n'est pas installée."""

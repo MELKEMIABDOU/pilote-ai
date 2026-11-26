@@ -118,7 +118,11 @@ class QwenEmbedder:
         device = self._device or ("cuda" if torch.cuda.is_available() else "cpu")
         # Padding à gauche : le dernier token de chaque ligne est alors toujours un vrai token.
         tokenizer = AutoTokenizer.from_pretrained(self._model_name, padding_side="left")
-        model = AutoModel.from_pretrained(self._model_name).to(device).eval()
+        # Les poids sont publiés en bfloat16. Sur un CPU sans instructions bfloat16, les calculs
+        # sont émulés : mesuré 6x plus lent qu'en float32 (103 s contre 16 s pour 8 passages).
+        # Sur GPU, on garde le format d'origine ("auto"), plus rapide et plus léger.
+        dtype = torch.float32 if device == "cpu" else "auto"
+        model = AutoModel.from_pretrained(self._model_name, dtype=dtype).to(device).eval()
         logger.info(
             "embedding model loaded",
             extra={

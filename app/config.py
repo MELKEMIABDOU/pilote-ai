@@ -1,6 +1,7 @@
 """Configuration lue depuis les variables d'environnement (préfixe ``COPILOTE_``) ou ``.env``."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -14,6 +15,10 @@ class Settings(BaseSettings):
     app_name: str = "Copilote ADV"
     environment: Literal["dev", "test", "prod"] = "dev"
     log_level: LogLevel = "INFO"
+
+    # RAG
+    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
+    vector_store_path: Path = Path("data/vector_store.db")
 
 
 @lru_cache

@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import statistics
+import tempfile
 import time
 from collections import Counter
 from collections.abc import Sequence
@@ -107,12 +109,13 @@ def load_questions(path: Path) -> list[Question]:
 
 
 def run(
-    questions: list[Question], document: Path, top_k: int
+    questions: list[Question], document: Path, top_k: int, store_kind: str = "memory"
 ) -> tuple[list[QuestionResult], Report]:
     # Imports ici : ils chargent Docling / PyTorch (lents), inutile pour les tests des calculs.
     from app.adapters.embeddings.qwen import QwenEmbedder
     from app.adapters.extraction.docling import DoclingExtractor
-    from app.ports.vector_store import IndexedChunk
+    from app.adapters.vector_store.sqlite_vec import SqliteVecStore
+    from app.ports.vector_store import IndexedChunk, VectorStore
     from tests.fixtures.fakes import InMemoryVectorStore
     from tests.fixtures.rules import HORIZON_RULES
 
@@ -123,41 +126,54 @@ def run(
     embedder = QwenEmbedder()
     started = time.perf_counter()
     vectors = embedder.embed_documents([chunk.text for chunk in extracted.chunks])
-    store = InMemoryVectorStore()
-    store.add(
-        [
-            IndexedChunk(
-                client_id=CLIENT_ID,
-                document_id=document.name,
-                chunk_id=chunk.chunk_id,
-                source=extracted.source,
-                page_number=chunk.page_number,
-                text=chunk.text,
-                vector=vector,
-            )
-            for chunk, vector in zip(extracted.chunks, vectors, strict=True)
-        ]
-    )
-    results = []
-    for question in questions:
-        found = store.search(
-            embedder.embed_query(question.question), client_id=CLIENT_ID, top_k=top_k
+    tmp_dir = Path(tempfile.mkdtemp(prefix="eval_store_"))
+    store: VectorStore
+    if store_kind == "sqlite":
+        store = SqliteVecStore(
+            tmp_dir / "eval.db", dimension=embedder.dimension, model_name=embedder.model_name
         )
-        hits = tuple(Hit(page_number=r.page_number, score=r.score) for r in found)
-        results.append(
-            QuestionResult(
-                id=question.id,
-                type=question.type,
-                question=question.question,
-                expected_pages=question.expected_pages,
-                rank=first_relevant_rank(hits, question.expected_pages)
-                if question.answerable
-                else None,
-                top_hits=hits,
-            )
+    else:
+        store = InMemoryVectorStore()
+    try:
+        store.add(
+            [
+                IndexedChunk(
+                    client_id=CLIENT_ID,
+                    document_id=document.name,
+                    chunk_id=chunk.chunk_id,
+                    source=extracted.source,
+                    page_number=chunk.page_number,
+                    text=chunk.text,
+                    vector=vector,
+                )
+                for chunk, vector in zip(extracted.chunks, vectors, strict=True)
+            ]
         )
+        results = []
+        for question in questions:
+            found = store.search(
+                embedder.embed_query(question.question), client_id=CLIENT_ID, top_k=top_k
+            )
+            hits = tuple(Hit(page_number=r.page_number, score=r.score) for r in found)
+            results.append(
+                QuestionResult(
+                    id=question.id,
+                    type=question.type,
+                    question=question.question,
+                    expected_pages=question.expected_pages,
+                    rank=first_relevant_rank(hits, question.expected_pages)
+                    if question.answerable
+                    else None,
+                    top_hits=hits,
+                )
+            )
+    finally:
+        if isinstance(store, SqliteVecStore):
+            store.close()
+        shutil.rmtree(tmp_dir, ignore_errors=True)
     config = {
         "model": embedder.model_name,
+        "store": store_kind,
         "chunks": len(extracted.chunks),
         "top_k": top_k,
         "extraction_seconds": round(extraction_seconds, 1),
@@ -248,11 +264,17 @@ def main() -> None:
     parser.add_argument("--document", type=Path, default=DEFAULT_DOCUMENT)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument(
+        "--store",
+        choices=["memory", "sqlite"],
+        default="memory",
+        help="memory = recherche exacte de référence ; sqlite = vrai stockage sqlite-vec",
+    )
+    parser.add_argument(
         "--save", action="store_true", help="enregistre le résultat dans outputs/eval/"
     )
     args = parser.parse_args()
 
-    results, config = run(load_questions(args.questions), args.document, args.top_k)
+    results, config = run(load_questions(args.questions), args.document, args.top_k, args.store)
     summary = summarize(results)
     print_report(results, summary, config)
     if args.save:
