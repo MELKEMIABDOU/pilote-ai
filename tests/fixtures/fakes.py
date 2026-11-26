@@ -1,9 +1,14 @@
-"""Faux Docling pour tester l'extracteur sans installer l'extra ``rag``."""
+"""Faux objets pour les tests : Docling (sans l'extra ``rag``), Embedder et VectorStore."""
 
 from __future__ import annotations
 
+import math
+from collections.abc import Sequence
 from pathlib import Path
 from types import SimpleNamespace
+
+from app.ports.embeddings import Vector
+from app.ports.vector_store import IndexedChunk, SearchResult
 
 
 class FakeDocument:
@@ -57,3 +62,70 @@ class FakeChunker:
 
     def chunk(self, document: FakeDocument) -> list[SimpleNamespace]:
         return self.chunks
+
+
+class FakeEmbedder:
+    """Embedder déterministe : le vecteur compte les mots d'un petit vocabulaire.
+
+    Deux textes qui partagent des mots du vocabulaire ont donc des vecteurs proches.
+    """
+
+    def __init__(self, vocabulary: Sequence[str] = ("riz", "prix", "stock", "client")) -> None:
+        self.vocabulary = tuple(word.casefold() for word in vocabulary)
+        self.model_name = "fake-bag-of-words"
+        self.dimension = len(self.vocabulary)
+
+    def embed_documents(self, texts: Sequence[str]) -> list[Vector]:
+        return [self.embed_query(text) for text in texts]
+
+    def embed_query(self, text: str) -> Vector:
+        words = text.casefold().split()
+        # +0.001 : évite le vecteur nul, pour lequel la similarité cosinus n'est pas définie.
+        return tuple(words.count(word) + 0.001 for word in self.vocabulary)
+
+
+class InMemoryVectorStore:
+    """VectorStore en mémoire (similarité cosinus) pour les tests."""
+
+    def __init__(self) -> None:
+        self._chunks: dict[tuple[str, str, int], IndexedChunk] = {}
+
+    def add(self, chunks: Sequence[IndexedChunk]) -> None:
+        for chunk in chunks:
+            self._chunks[(chunk.client_id, chunk.document_id, chunk.chunk_id)] = chunk
+
+    def search(self, query: Vector, *, client_id: str, top_k: int = 5) -> list[SearchResult]:
+        if top_k < 1:
+            raise ValueError("top_k must be >= 1")
+        results = []
+        for chunk in self._chunks.values():
+            if chunk.client_id != client_id:
+                continue
+            if len(chunk.vector) != len(query):
+                raise ValueError("query dimension does not match stored vectors")
+            results.append(
+                SearchResult(
+                    client_id=chunk.client_id,
+                    document_id=chunk.document_id,
+                    chunk_id=chunk.chunk_id,
+                    source=chunk.source,
+                    page_number=chunk.page_number,
+                    text=chunk.text,
+                    score=_cosine(query, chunk.vector),
+                )
+            )
+        return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]
+
+    def has_document(self, document_id: str, *, client_id: str) -> bool:
+        return any(key[:2] == (client_id, document_id) for key in self._chunks)
+
+    def delete_document(self, document_id: str, *, client_id: str) -> int:
+        keys = [key for key in self._chunks if key[:2] == (client_id, document_id)]
+        for key in keys:
+            del self._chunks[key]
+        return len(keys)
+
+
+def _cosine(left: Vector, right: Vector) -> float:
+    dot = sum(a * b for a, b in zip(left, right, strict=True))
+    return dot / (math.hypot(*left) * math.hypot(*right))
