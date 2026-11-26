@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.111.0",
     "httpx>=0.27.0",
     "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
     "sqlalchemy>=2.0.0",
     "uvicorn[standard]>=0.30.0",
 ]
@@ -20,6 +21,9 @@ rag = [
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.16.2",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
     "pytest>=8.2.0",
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
@@ -36,7 +40,8 @@ target-version = "py312"
 # I: isort (tri automatique et propre des imports)
 # B: flake8-bugbear (détection de pièges et bugs fréquents)
 # UP: pyupgrade (modernisation automatique de la syntaxe Python)
-select = ["E", "F", "W", "I", "B", "UP"]
+# SIM: simplifications, PT: bonnes pratiques pytest
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "PT"]
 ignore = []
 
 [tool.ruff.format]
@@ -47,4 +52,17 @@ indent-style = "space"
 minversion = "8.0"
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-v --strict-markers"
+# Les tests d'intégration (vrai Docling, lents) sont exclus par défaut : `pytest -m integration`.
+addopts = "-v --strict-markers -m 'not integration'"
+markers = ["integration: tests lents qui utilisent les vraies dépendances (Docling...)"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["app"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+# Dépendances optionnelles (extra `rag`), absentes en CI.
+module = ["docling.*", "docling_core.*", "transformers.*"]
+ignore_missing_imports = true

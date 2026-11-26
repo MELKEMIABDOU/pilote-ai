@@ -1,39 +1,58 @@
-# Copilote ADV — extraction documentaire
+# Copilote ADV
 
-Premier module documentaire : Docling convertit un fichier local en Markdown structuré,
-puis HybridChunker prépare des passages avec le tokenizer Qwen3 Embedding.
+Copilote qui prépare et contrôle les bons de commande B2B pour les équipes ADV.
 
-Formats de fichiers acceptés dans ce module : PDF, Word (`.doc`, `.docx`), Excel
-(`.xls`, `.xlsx`), HTML (`.html`, `.htm`) et emails (`.eml`, `.msg`). Les fichiers `.xls`
-et `.doc` peuvent nécessiter LibreOffice selon le système. Docling reçoit directement les
-URLs HTTP(S), ce qui permet aussi de convertir des pages web.
+**État actuel :** seule l'extraction documentaire est faite (Docling → Markdown + passages).
 
-Installer Docling :
+## Installation
 
 ```powershell
-uv sync --extra rag
+uv sync --extra rag   # --extra rag installe Docling (nécessaire pour extraire de vrais documents)
 ```
 
-Exemple :
+## Lancer l'API
+
+```powershell
+uv run uvicorn app.main:app --reload
+```
+
+Puis ouvrir http://127.0.0.1:8000/health et http://127.0.0.1:8000/docs.
+
+## Extraire un document
 
 ```python
 from pathlib import Path
 
-from app.rag.extraction import DoclingExtractor
+from app.adapters.extraction.docling import DoclingExtractor
 
-extractor = DoclingExtractor()
+result = DoclingExtractor().extract(Path("documents/commande.pdf"))
 
-pdf = extractor.extract(Path("documents/procedure.pdf"))
-excel = extractor.extract(Path("documents/tarifs.xlsx"))
-email = extractor.extract(Path("documents/message.eml"))
-
-print(pdf.markdown)
-for chunk in pdf.chunks:
+print(result.markdown)
+for chunk in result.chunks:
     print(chunk.chunk_id, chunk.page_number, chunk.text)
 ```
 
-Chaque passage contient un identifiant local, sa page source lorsqu’elle est connue et le
-texte contextualisé produit par HybridChunker. Le post-traitement retire les sommaires et
-séparateurs de tableau résiduels, propage le titre de section et réunit les coupures qui
-semblent tomber au milieu d’une ligne ou séparer une courte phrase de son tableau. La
-limite initiale est de 512 tokens.
+- Formats acceptés : PDF, Word, Excel, HTML, emails (`.eml`, `.msg`).
+- Fichiers locaux uniquement : les URLs sont refusées.
+
+## Tests et qualité
+
+```powershell
+uv run pytest                 # tests rapides
+uv run pytest -m integration  # test sur un vrai PDF (lent)
+uv run ruff check .
+uv run mypy
+```
+
+## Structure
+
+```
+app/
+├── domain/     # règles métier (sans dépendance externe)
+├── ports/      # interfaces
+├── adapters/   # implémentations (Docling, ERP, base de données…)
+├── application/# cas d'usage
+└── api/        # routes FastAPI
+```
+
+Les documents clients vont dans `documents/` (ignoré par git).
