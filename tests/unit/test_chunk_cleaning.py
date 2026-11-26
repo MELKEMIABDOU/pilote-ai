@@ -53,6 +53,30 @@ def test_running_header_heading_is_removed_only_with_document_rules() -> None:
     assert texts(chunks) == [f"{HORIZON_HEADER}\nDistrib A, Catégorie = Boissons."]
 
 
+def test_chunk_whose_only_heading_was_removed_takes_the_previous_section() -> None:
+    # Cas réel (question q20 de l'évaluation) : le tableau des fournisseurs, page 6, n'avait
+    # que l'en-tête répété comme titre ; une fois retiré, il perdait sa section.
+    section = "11. Suivi des responsables et fournisseurs"
+    chunks = [
+        raw("Karim Benali, Produits suivis = 10.", 5, (section,)),
+        raw("CleanPro, Évaluation = À surveiller.", 6, (HORIZON_HEADER,)),
+    ]
+
+    assert texts(chunks, HORIZON_RULES) == [
+        f"{section}\nKarim Benali, Produits suivis = 10.",
+        f"{section}\nCleanPro, Évaluation = À surveiller.",
+    ]
+
+
+def test_chunk_that_never_had_a_heading_does_not_take_one() -> None:
+    chunks = [
+        raw("Premier passage.", 1, ("1. Objet",)),
+        raw("Passage sans titre chez Docling.", 2),
+    ]
+
+    assert texts(chunks)[1] == "Passage sans titre chez Docling."
+
+
 def test_running_header_line_is_removed_from_the_body() -> None:
     chunks = [raw(f"{HORIZON_HEADER}\nTexte utile.", 6)]
 

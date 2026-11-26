@@ -195,7 +195,19 @@ def _clean_and_repair_chunks(
     raw_chunks: list[_RawChunk],
     rules: ChunkCleaningRules,
 ) -> tuple[ExtractedChunk, ...]:
-    cleaned = [chunk for raw in raw_chunks if (chunk := _clean_chunk(raw, rules)) is not None]
+    cleaned: list[_RawChunk] = []
+    last_headings: tuple[str, ...] = ()
+    for raw in raw_chunks:
+        chunk = _clean_chunk(raw, rules)
+        if chunk is None:
+            continue
+        if raw.headings and not chunk.headings:
+            # Le nettoyage a retiré le seul titre (ex. un en-tête répété que Docling avait pris
+            # pour un titre) : on reprend la section du passage précédent pour garder le contexte.
+            chunk.headings = last_headings
+        if chunk.headings:
+            last_headings = chunk.headings
+        cleaned.append(chunk)
 
     # Les recollages se décident sur le texte seul, sans les titres devant.
     merged: list[_RawChunk] = []

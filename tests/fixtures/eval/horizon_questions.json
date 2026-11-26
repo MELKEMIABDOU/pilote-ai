@@ -1,0 +1,218 @@
+{
+  "document": "horizon.pdf",
+  "version": 1,
+  "notes": "expected_pages = pages où la réponse se trouve (une seule suffit pour compter comme trouvée). Liste vide = la réponse n'est pas dans le document.",
+  "questions": [
+    {
+      "id": "q01",
+      "question": "Qui est le responsable du magasin Horizon ?",
+      "expected_pages": [1, 3],
+      "expected_answer": "Karim Benali",
+      "type": "texte"
+    },
+    {
+      "id": "q02",
+      "question": "Quelle période couvre ce rapport ?",
+      "expected_pages": [1, 3],
+      "expected_answer": "Janvier à décembre 2026",
+      "type": "texte"
+    },
+    {
+      "id": "q03",
+      "question": "Combien de produits le magasin suit-il ?",
+      "expected_pages": [3, 6],
+      "expected_answer": "20 produits",
+      "type": "chiffre"
+    },
+    {
+      "id": "q04",
+      "question": "Quel est le chiffre d'affaires annuel estimé ?",
+      "expected_pages": [3, 5, 6],
+      "expected_answer": "69 830 €",
+      "type": "chiffre"
+    },
+    {
+      "id": "q05",
+      "question": "Quel mois a eu le chiffre d'affaires le plus faible, et de combien ?",
+      "expected_pages": [3, 5],
+      "expected_answer": "Janvier, 4 850 €",
+      "type": "chiffre"
+    },
+    {
+      "id": "q06",
+      "question": "Quel est le prix d'achat du riz 1 kg ?",
+      "expected_pages": [3, 4, 5],
+      "expected_answer": "1,20 €",
+      "type": "tableau"
+    },
+    {
+      "id": "q07",
+      "question": "À quel prix de gros le café 250 g est-il vendu ?",
+      "expected_pages": [3, 5],
+      "expected_answer": "4,20 €",
+      "type": "tableau"
+    },
+    {
+      "id": "q08",
+      "question": "Quel fournisseur livre l'huile 1 L ?",
+      "expected_pages": [3, 4],
+      "expected_answer": "Aliment D",
+      "type": "tableau"
+    },
+    {
+      "id": "q09",
+      "question": "Combien de bouteilles d'eau 1,5 L ont été vendues sur l'année ?",
+      "expected_pages": [4, 5],
+      "expected_answer": "572",
+      "type": "tableau"
+    },
+    {
+      "id": "q10",
+      "question": "Quel est le stock restant de beurre 250 g ?",
+      "expected_pages": [4],
+      "expected_answer": "16",
+      "type": "tableau"
+    },
+    {
+      "id": "q11",
+      "question": "Quand le lait a-t-il été en rupture de stock et pendant combien de temps ?",
+      "expected_pages": [4],
+      "expected_answer": "Le 24/04/2026, pendant 2 jours (demande élevée)",
+      "type": "tableau"
+    },
+    {
+      "id": "q12",
+      "question": "Quelle est la cause de la rupture du Coca-Cola ?",
+      "expected_pages": [4],
+      "expected_answer": "Retard fournisseur (16/06/2026)",
+      "type": "tableau"
+    },
+    {
+      "id": "q13",
+      "question": "Pourquoi l'eau a-t-elle manqué en été ?",
+      "expected_pages": [4],
+      "expected_answer": "Forte chaleur (rupture du 08/07/2026)",
+      "type": "reformulation"
+    },
+    {
+      "id": "q14",
+      "question": "Combien de bidons de lessive ont été commandés au fournisseur en septembre ?",
+      "expected_pages": [4],
+      "expected_answer": "70 unités (commande du 15/09/2026)",
+      "type": "reformulation"
+    },
+    {
+      "id": "q15",
+      "question": "Quelle est la différence entre le prix de détail et le prix de gros ?",
+      "expected_pages": [4],
+      "expected_answer": "Détail : petites quantités ; gros : professionnels ou achats en quantité",
+      "type": "texte"
+    },
+    {
+      "id": "q16",
+      "question": "Comment la marge unitaire est-elle calculée ?",
+      "expected_pages": [5],
+      "expected_answer": "Prix de vente moins prix d'achat",
+      "type": "texte"
+    },
+    {
+      "id": "q17",
+      "question": "Quelle est la marge brute estimée du mois de décembre ?",
+      "expected_pages": [5],
+      "expected_answer": "3 100 €",
+      "type": "chiffre"
+    },
+    {
+      "id": "q18",
+      "question": "Quel produit arrive en tête du classement des ventes ?",
+      "expected_pages": [5],
+      "expected_answer": "Eau 1,5 L (572 unités)",
+      "type": "reformulation"
+    },
+    {
+      "id": "q19",
+      "question": "Que faut-il faire pour éviter une nouvelle rupture de café ?",
+      "expected_pages": [5],
+      "expected_answer": "Augmenter le stock minimum",
+      "type": "reformulation"
+    },
+    {
+      "id": "q20",
+      "question": "Quel fournisseur est jugé à surveiller ?",
+      "expected_pages": [6],
+      "expected_answer": "CleanPro (entretien)",
+      "type": "tableau"
+    },
+    {
+      "id": "q21",
+      "question": "De quoi s'occupe Sarah Martin ?",
+      "expected_pages": [5],
+      "expected_answer": "Ventes, inventaire et commandes (10 produits)",
+      "type": "texte"
+    },
+    {
+      "id": "q22",
+      "question": "Pourquoi le stock réel peut-il être différent du stock théorique ?",
+      "expected_pages": [6],
+      "expected_answer": "Erreurs de saisie, produits endommagés ou périmés, pertes, vols, erreurs de réception ou de caisse",
+      "type": "reformulation"
+    },
+    {
+      "id": "q23",
+      "question": "Quelle est la dernière étape de la procédure de réapprovisionnement ?",
+      "expected_pages": [6],
+      "expected_answer": "Faire valider l'opération par le responsable",
+      "type": "texte"
+    },
+    {
+      "id": "q24",
+      "question": "Que recommande le rapport pour les produits frais ?",
+      "expected_pages": [6],
+      "expected_answer": "Les contrôler quotidiennement",
+      "type": "texte"
+    },
+    {
+      "id": "q25",
+      "question": "Combien de fois le Coca-Cola a-t-il été réapprovisionné ?",
+      "expected_pages": [4, 7],
+      "expected_answer": "2 fois",
+      "type": "chiffre"
+    },
+    {
+      "id": "q26",
+      "question": "Combien coûte le shampooing au détail ?",
+      "expected_pages": [3, 5],
+      "expected_answer": "3,50 €",
+      "type": "tableau"
+    },
+    {
+      "id": "q27",
+      "question": "Quel est le numéro de téléphone du fournisseur Distrib A ?",
+      "expected_pages": [],
+      "expected_answer": null,
+      "type": "sans_reponse"
+    },
+    {
+      "id": "q28",
+      "question": "Quel est le bénéfice net du magasin en 2026 ?",
+      "expected_pages": [],
+      "expected_answer": null,
+      "type": "sans_reponse",
+      "note": "Piège : la page 5 précise que les marges sont brutes et ne sont PAS le bénéfice net."
+    },
+    {
+      "id": "q29",
+      "question": "Quel est le prix de vente du thé vert ?",
+      "expected_pages": [],
+      "expected_answer": null,
+      "type": "sans_reponse"
+    },
+    {
+      "id": "q30",
+      "question": "Quelle est l'adresse du magasin Horizon ?",
+      "expected_pages": [],
+      "expected_answer": null,
+      "type": "sans_reponse"
+    }
+  ]
+}
