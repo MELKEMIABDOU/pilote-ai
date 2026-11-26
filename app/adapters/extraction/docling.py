@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from app.adapters.huggingface import load_pretrained
 from app.domain.errors import ExtractionError, MissingDependencyError, UnsupportedDocumentError
 from app.ports.extraction import (
     ExtractedChunk,
@@ -112,7 +113,7 @@ class DoclingExtractor:
                 ) from exc
 
             tokenizer = HuggingFaceTokenizer(
-                tokenizer=AutoTokenizer.from_pretrained(self._tokenizer_model),
+                tokenizer=load_pretrained(AutoTokenizer.from_pretrained, self._tokenizer_model),
                 max_tokens=self._max_tokens,
             )
             self._chunker = HybridChunker(tokenizer=tokenizer)
@@ -148,24 +149,32 @@ def _export_pages(document: Any) -> tuple[ExtractedPage, ...]:
     )
 
 
-def _chunk_page_number(chunk: Any) -> int | None:
+def _chunk_page_range(chunk: Any) -> tuple[int | None, int | None]:
+    """Première et dernière page d'un chunk Docling (``None, None`` si inconnues).
+
+    Un chunk regroupe plusieurs éléments (paragraphes, tableau…) qui peuvent être sur des pages
+    différentes : la citation doit couvrir toutes ces pages, pas seulement la première.
+    """
     metadata = getattr(chunk, "meta", None)
-    for item in getattr(metadata, "doc_items", ()) or ():
-        for provenance in getattr(item, "prov", ()) or ():
-            page_number = getattr(provenance, "page_no", None)
-            if page_number is not None:
-                return int(page_number)
-    return None
+    pages = [
+        int(page)
+        for item in getattr(metadata, "doc_items", ()) or ()
+        for provenance in getattr(item, "prov", ()) or ()
+        if (page := getattr(provenance, "page_no", None)) is not None
+    ]
+    return (min(pages), max(pages)) if pages else (None, None)
 
 
 def _to_raw_chunk(chunk: Any) -> _RawChunk:
     """Lit un chunk Docling : titres et légendes sont dans ``meta``, le texte seul dans ``text``."""
     metadata = getattr(chunk, "meta", None)
+    first_page, last_page = _chunk_page_range(chunk)
     return _RawChunk(
         headings=tuple(getattr(metadata, "headings", None) or ()),
         captions=tuple(getattr(metadata, "captions", None) or ()),
         body=str(chunk.text),
-        page_number=_chunk_page_number(chunk),
+        page_number=first_page,
+        page_end=last_page,
     )
 
 
@@ -184,6 +193,7 @@ class _RawChunk:
     captions: tuple[str, ...]
     body: str
     page_number: int | None
+    page_end: int | None = None
 
     def render(self) -> str:
         # Même format que ``HybridChunker.contextualize`` : le contexte puis le texte, une ligne
@@ -215,14 +225,28 @@ def _clean_and_repair_chunks(
         if merged and _should_join_chunks(merged[-1].body, chunk.body):
             previous = merged[-1]
             previous.body = f"{previous.body.rstrip()}\n{chunk.body.lstrip()}"
-            previous.page_number = previous.page_number or chunk.page_number
+            previous.page_number, previous.page_end = _merge_page_ranges(previous, chunk)
         else:
             merged.append(chunk)
 
     return tuple(
-        ExtractedChunk(chunk_id=index, page_number=chunk.page_number, text=chunk.render())
+        ExtractedChunk(
+            chunk_id=index,
+            page_number=chunk.page_number,
+            text=chunk.render(),
+            page_end=chunk.page_end,
+        )
         for index, chunk in enumerate(merged, start=1)
     )
+
+
+def _merge_page_ranges(left: _RawChunk, right: _RawChunk) -> tuple[int | None, int | None]:
+    pages = [
+        page
+        for page in (left.page_number, left.page_end, right.page_number, right.page_end)
+        if page is not None
+    ]
+    return (min(pages), max(pages)) if pages else (None, None)
 
 
 def _clean_chunk(raw: _RawChunk, rules: ChunkCleaningRules) -> _RawChunk | None:
@@ -246,6 +270,7 @@ def _clean_chunk(raw: _RawChunk, rules: ChunkCleaningRules) -> _RawChunk | None:
         captions=raw.captions,
         body=body,
         page_number=raw.page_number,
+        page_end=raw.page_end,
     )
 
 

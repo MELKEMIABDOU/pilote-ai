@@ -32,7 +32,9 @@ uv run python -m app.cli search "Quel est le prix d'achat du riz ?" --client dem
 uv run python -m app.cli search "Quel fournisseur est à surveiller ?" --client demo --top-k 3
 ```
 
-Chaque résultat affiche le fichier, la page et le score.
+Chaque résultat affiche le fichier, la ou les pages (ex. `p.4-5`) et le score.
+Un document indexé avant l'ajout des pages multiples garde une seule page : relancer `index`
+avec `--reindex` pour le mettre à jour.
 
 **3. Vérifier l'isolation des clients** : un autre client ne voit rien.
 
@@ -63,9 +65,15 @@ pour chacune, le rang de la bonne page. Avec `--save`, le résultat est enregist
 | Départ | 85 % | 100 % | 0,91 | — |
 | + titre de section conservé après nettoyage | 85 % | 100 % | 0,92 | 735 s |
 | Stockage sqlite-vec (au lieu de la mémoire) | 85 % | 100 % | 0,92 | 1 451 s |
-| **+ float32 sur CPU (actuel)** | **81 %** | **100 %** | **0,90** | **149 s** |
+| + float32 sur CPU | 81 % | 100 % | 0,90 | 149 s |
+| **+ citations sur plusieurs pages, hors ligne (actuel)** | **85 %** | **100 %** | **0,92** | **130 s** |
 
 - **sqlite-vec donne exactement les mêmes résultats** que la recherche en mémoire.
+- **Citations « p.4-5 »** : la recherche est identique (mêmes scores), mais un passage à
+  cheval sur deux pages était cité avec sa seule 1re page. Ex. q07 : le tableau des prix est
+  page 5, le passage était étiqueté « p.4 » et compté comme faux. La mesure est maintenant juste.
+- **Hors ligne** : l'évaluation complète passe avec `HF_HUB_OFFLINE=1` ; plus aucun appel à
+  Hugging Face une fois les modèles téléchargés.
 - **float32 : 10× plus rapide.** Les poids Qwen3 sont en bfloat16, émulé (lent) sur les CPU
   sans instructions bfloat16. La baisse à 81 % vient d'une seule question (q24) dont les deux
   meilleurs passages sont à égalité (écart de 0,0001) : c'est du bruit, pas une régression.

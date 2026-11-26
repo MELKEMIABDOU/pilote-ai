@@ -3,6 +3,7 @@
 Le contrat commun à tous les VectorStore est dans ``test_vector_store_contract.py``.
 """
 
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,25 @@ def test_data_survives_closing_and_reopening(tmp_path: Path) -> None:
         [result] = reopened.search((1.0, 0.0), client_id="client-a")
 
     assert (result.text, result.page_number) == ("riz", 2)
+
+
+def test_store_created_before_page_end_existed_is_migrated(tmp_path: Path) -> None:
+    path = tmp_path / "old.db"
+    with SqliteVecStore(path, dimension=2, model_name=MODEL) as store:
+        store.add([chunk((1.0, 0.0))])
+    # Recrée l'ancien schéma : la table chunks sans la colonne page_end.
+    db = sqlite3.connect(path)
+    with db:
+        db.execute("ALTER TABLE chunks DROP COLUMN page_end")
+    db.close()
+
+    with SqliteVecStore(path, dimension=2, model_name=MODEL) as migrated:
+        [old] = migrated.search((1.0, 0.0), client_id="client-a")
+        migrated.add([IndexedChunk("client-a", "doc-2", 1, "b.pdf", 4, "t", (1.0, 0.0), 5)])
+        pages = {r.document_id: r.pages for r in migrated.search((1.0, 0.0), client_id="client-a")}
+
+    assert old.text == "riz"  # les anciennes données sont conservées
+    assert pages == {"doc-1": (2,), "doc-2": (4, 5)}
 
 
 def test_reopening_with_another_model_is_refused(tmp_path: Path) -> None:

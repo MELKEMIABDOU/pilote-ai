@@ -75,6 +75,7 @@ class IngestDocument:
                     page_number=chunk.page_number,
                     text=chunk.text,
                     vector=vector,
+                    page_end=chunk.page_end,
                 )
                 for chunk, vector in zip(extracted.chunks, vectors, strict=True)
             ]

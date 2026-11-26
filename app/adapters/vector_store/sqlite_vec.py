@@ -65,11 +65,13 @@ class SqliteVecStore:
             for chunk in chunks:
                 (row_id,) = db.execute(
                     """
-                    INSERT INTO chunks (client_id, document_id, chunk_id, source, page_number, text)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO chunks
+                        (client_id, document_id, chunk_id, source, page_number, page_end, text)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT (client_id, document_id, chunk_id) DO UPDATE SET
                         source = excluded.source,
                         page_number = excluded.page_number,
+                        page_end = excluded.page_end,
                         text = excluded.text
                     RETURNING id
                     """,
@@ -79,6 +81,7 @@ class SqliteVecStore:
                         chunk.chunk_id,
                         chunk.source,
                         chunk.page_number,
+                        chunk.page_end,
                         chunk.text,
                     ),
                 ).fetchone()
@@ -101,7 +104,7 @@ class SqliteVecStore:
                     WHERE embedding MATCH ? AND k = ? AND client_id = ?
                 )
                 SELECT c.client_id, c.document_id, c.chunk_id, c.source, c.page_number, c.text,
-                       nearest.distance
+                       nearest.distance, c.page_end
                 FROM nearest JOIN chunks AS c ON c.id = nearest.rowid
                 ORDER BY nearest.distance
                 """,
@@ -116,6 +119,7 @@ class SqliteVecStore:
                 page_number=row[4],
                 text=row[5],
                 score=1.0 - row[6],  # distance cosinus → similarité cosinus
+                page_end=row[7],
             )
             for row in rows
         ]
@@ -180,11 +184,17 @@ class SqliteVecStore:
                     chunk_id INTEGER NOT NULL,
                     source TEXT NOT NULL,
                     page_number INTEGER,
+                    page_end INTEGER,
                     text TEXT NOT NULL,
                     UNIQUE (client_id, document_id, chunk_id)
                 )
                 """
             )
+            # Migration : les bases créées avant l'ajout de page_end n'ont pas la colonne.
+            # Leurs passages gardent page_end = NULL (une seule page) jusqu'à un --reindex.
+            columns = {row[1] for row in db.execute("PRAGMA table_info(chunks)")}
+            if "page_end" not in columns:
+                db.execute("ALTER TABLE chunks ADD COLUMN page_end INTEGER")
             # La dimension est un int validé : on peut l'insérer dans le DDL sans risque.
             db.execute(
                 "CREATE VIRTUAL TABLE IF NOT EXISTS chunk_vectors USING vec0("

@@ -20,7 +20,12 @@ type StoreFactory = Callable[..., VectorStore]
 
 
 def make_chunk(
-    text: str, *, client_id: str = "client-a", document_id: str = "doc-1", chunk_id: int = 1
+    text: str,
+    *,
+    client_id: str = "client-a",
+    document_id: str = "doc-1",
+    chunk_id: int = 1,
+    page_end: int | None = None,
 ) -> IndexedChunk:
     return IndexedChunk(
         client_id=client_id,
@@ -30,6 +35,7 @@ def make_chunk(
         page_number=3,
         text=text,
         vector=EMBEDDER.embed_query(text),
+        page_end=page_end,
     )
 
 
@@ -70,6 +76,14 @@ def test_search_returns_results_sorted_by_score_with_citation(new_store: StoreFa
     assert [r.chunk_id for r in results] == [2, 1]
     assert results[0].score > results[1].score
     assert (results[0].source, results[0].page_number) == ("horizon.pdf", 3)
+
+
+def test_page_range_is_kept_for_citations(new_store: StoreFactory) -> None:
+    store = new_store(make_chunk("prix du riz", page_end=5))
+
+    [result] = store.search(EMBEDDER.embed_query("riz"), client_id="client-a")
+
+    assert result.pages == (3, 4, 5)
 
 
 def test_scores_are_cosine_similarities(new_store: StoreFactory) -> None:

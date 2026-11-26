@@ -27,6 +27,17 @@ def texts(chunks: list[_RawChunk], rules: ChunkCleaningRules = DEFAULT_RULES) ->
     return [chunk.text for chunk in _clean_and_repair_chunks(chunks, rules)]
 
 
+def test_joined_chunks_cover_the_pages_of_both_parts() -> None:
+    left = _RawChunk(headings=("4. Achats",), captions=(), body="Ligne P001,", page_number=8)
+    right = _RawChunk(
+        headings=("4. Achats",), captions=(), body="Riz, 20 unités", page_number=9, page_end=10
+    )
+
+    [chunk] = _clean_and_repair_chunks([left, right], DEFAULT_RULES)
+
+    assert (chunk.page_number, chunk.page_end) == (8, 10)
+
+
 def test_table_of_contents_chunk_is_dropped_entirely() -> None:
     chunks = [
         # Cas réel du PDF Horizon : la dernière entrée n'a qu'un seul numéro.

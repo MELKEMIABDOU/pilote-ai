@@ -49,7 +49,7 @@ class Question:
 
 @dataclass(frozen=True, slots=True)
 class Hit:
-    page_number: int | None
+    pages: tuple[int, ...]  # toutes les pages couvertes par le passage
     score: float
 
 
@@ -72,9 +72,17 @@ class QuestionResult:
 
 def first_relevant_rank(hits: Sequence[Hit], expected_pages: Sequence[int]) -> int | None:
     for rank, hit in enumerate(hits, start=1):
-        if hit.page_number in expected_pages:
+        # Un passage à cheval sur les pages 4-5 est pertinent si la réponse est en page 4 OU 5.
+        if set(hit.pages) & set(expected_pages):
             return rank
     return None
+
+
+def _page_label(pages: Sequence[int]) -> str:
+    """``()`` → ``?`` ; ``(4,)`` → ``4`` ; ``(4, 5)`` → ``4-5``."""
+    if not pages:
+        return "?"
+    return str(pages[0]) if len(pages) == 1 else f"{pages[0]}-{pages[-1]}"
 
 
 def recall_at(results: Sequence[QuestionResult], k: int) -> float:
@@ -145,6 +153,7 @@ def run(
                     page_number=chunk.page_number,
                     text=chunk.text,
                     vector=vector,
+                    page_end=chunk.page_end,
                 )
                 for chunk, vector in zip(extracted.chunks, vectors, strict=True)
             ]
@@ -154,7 +163,7 @@ def run(
             found = store.search(
                 embedder.embed_query(question.question), client_id=CLIENT_ID, top_k=top_k
             )
-            hits = tuple(Hit(page_number=r.page_number, score=r.score) for r in found)
+            hits = tuple(Hit(pages=r.pages, score=r.score) for r in found)
             results.append(
                 QuestionResult(
                     id=question.id,
@@ -213,7 +222,7 @@ def print_report(results: list[QuestionResult], summary: Report, config: Report)
     print(f"\n{'id':<5} {'type':<14} {'rang':>4}  {'score':>5}  pages trouvées (top 3)  attendues")
     for r in results:
         rank = "-" if r.rank is None else str(r.rank)
-        pages = ", ".join(str(h.page_number) for h in r.top_hits[:3])
+        pages = ", ".join(_page_label(h.pages) for h in r.top_hits[:3])
         expected = ", ".join(map(str, r.expected_pages)) or "aucune"
         flag = (
             ""

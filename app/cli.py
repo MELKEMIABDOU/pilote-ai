@@ -31,14 +31,22 @@ def _index(services: RagServices, args: argparse.Namespace) -> int:
     return 1 if failures else 0
 
 
+def format_pages(pages: tuple[int, ...]) -> str:
+    """``()`` → ``page ?`` ; ``(4,)`` → ``p.4`` ; ``(4, 5, 6)`` → ``p.4-6``."""
+    if not pages:
+        return "page ?"
+    if len(pages) == 1:
+        return f"p.{pages[0]}"
+    return f"p.{pages[0]}-{pages[-1]}"
+
+
 def _search(services: RagServices, args: argparse.Namespace) -> int:
     results = services.search(args.query, client_id=args.client, top_k=args.top_k)
     if not results:
         print("Aucun passage indexé pour ce client.")
         return 0
     for rank, result in enumerate(results, start=1):
-        page = f"p.{result.page_number}" if result.page_number else "page ?"
-        print(f"\n[{rank}] {result.source} {page}  score {result.score:.3f}")
+        print(f"\n[{rank}] {result.source} {format_pages(result.pages)}  score {result.score:.3f}")
         # Texte complet : le couper cacherait parfois la ligne qui contient la réponse.
         print("    " + result.text.replace("\n", "\n    "))
     return 0

@@ -18,6 +18,11 @@ def _require_text(value: str, field_name: str) -> None:
         raise ValueError(f"{field_name} must not be empty")
 
 
+def _check_page_range(first: int | None, last: int | None) -> None:
+    if last is not None and (first is None or last < first):
+        raise ValueError("page_end must be >= page_number")
+
+
 @dataclass(frozen=True, slots=True)
 class IndexedChunk:
     """Un passage prêt à être stocké : son texte, sa provenance et son vecteur."""
@@ -26,9 +31,10 @@ class IndexedChunk:
     document_id: str  # SHA-256 du contenu du fichier source
     chunk_id: int  # numéro du passage dans le document (à partir de 1)
     source: str  # nom du fichier, pour la citation
-    page_number: int | None
+    page_number: int | None  # première page du passage
     text: str
     vector: Vector
+    page_end: int | None = None  # dernière page ; None = même page que page_number
 
     def __post_init__(self) -> None:
         _require_text(self.client_id, "client_id")
@@ -37,6 +43,7 @@ class IndexedChunk:
             raise ValueError("chunk_id must be >= 1")
         if not self.vector:
             raise ValueError("vector must not be empty")
+        _check_page_range(self.page_number, self.page_end)
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,10 +57,19 @@ class SearchResult:
     page_number: int | None
     text: str
     score: float  # plus haut = plus pertinent
+    page_end: int | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.score):
             raise ValueError("score must be a finite number")
+        _check_page_range(self.page_number, self.page_end)
+
+    @property
+    def pages(self) -> tuple[int, ...]:
+        """Toutes les pages couvertes par le passage, ex. ``(4, 5)`` ; vide si inconnues."""
+        if self.page_number is None:
+            return ()
+        return tuple(range(self.page_number, (self.page_end or self.page_number) + 1))
 
 
 class VectorStore(Protocol):

@@ -12,6 +12,7 @@ import time
 from collections.abc import Callable, Sequence
 from typing import Any
 
+from app.adapters.huggingface import load_pretrained
 from app.domain.errors import EmbeddingError, MissingDependencyError
 from app.ports.embeddings import Vector
 
@@ -117,12 +118,15 @@ class QwenEmbedder:
         started = time.perf_counter()
         device = self._device or ("cuda" if torch.cuda.is_available() else "cpu")
         # Padding à gauche : le dernier token de chaque ligne est alors toujours un vrai token.
-        tokenizer = AutoTokenizer.from_pretrained(self._model_name, padding_side="left")
+        tokenizer = load_pretrained(
+            AutoTokenizer.from_pretrained, self._model_name, padding_side="left"
+        )
         # Les poids sont publiés en bfloat16. Sur un CPU sans instructions bfloat16, les calculs
         # sont émulés : mesuré 6x plus lent qu'en float32 (103 s contre 16 s pour 8 passages).
         # Sur GPU, on garde le format d'origine ("auto"), plus rapide et plus léger.
         dtype = torch.float32 if device == "cpu" else "auto"
-        model = AutoModel.from_pretrained(self._model_name, dtype=dtype).to(device).eval()
+        model = load_pretrained(AutoModel.from_pretrained, self._model_name, dtype=dtype)
+        model = model.to(device).eval()
         logger.info(
             "embedding model loaded",
             extra={
@@ -156,4 +160,4 @@ def _load_config(model_name: str) -> Any:
             "Qwen embeddings need the optional 'rag' dependencies; "
             "install them with `uv sync --extra rag`."
         ) from exc
-    return AutoConfig.from_pretrained(model_name)
+    return load_pretrained(AutoConfig.from_pretrained, model_name)

@@ -7,6 +7,7 @@ from scripts.eval_retrieval import (
     DEFAULT_QUESTIONS,
     Hit,
     QuestionResult,
+    _page_label,
     first_relevant_rank,
     load_questions,
     mean_reciprocal_rank,
@@ -15,14 +16,25 @@ from scripts.eval_retrieval import (
 
 
 def result(rank: int | None) -> QuestionResult:
-    return QuestionResult("q", "texte", "?", (3,), rank, (Hit(3, 0.9),))
+    return QuestionResult("q", "texte", "?", (3,), rank, (Hit((3,), 0.9),))
 
 
 def test_first_relevant_rank_returns_the_rank_of_the_first_expected_page() -> None:
-    hits = [Hit(page_number=5, score=0.9), Hit(page_number=None, score=0.8), Hit(3, 0.7)]
+    hits = [Hit(pages=(5,), score=0.9), Hit(pages=(), score=0.8), Hit((3,), 0.7)]
 
     assert first_relevant_rank(hits, [3, 4]) == 3
     assert first_relevant_rank(hits, [7]) is None
+
+
+def test_passage_spanning_several_pages_matches_any_of_them() -> None:
+    hits = [Hit(pages=(4, 5), score=0.9)]
+
+    assert first_relevant_rank(hits, [5]) == 1
+    assert first_relevant_rank(hits, [6]) is None
+
+
+def test_page_label() -> None:
+    assert [_page_label(p) for p in [(), (4,), (4, 5)]] == ["?", "4", "4-5"]
 
 
 def test_recall_counts_questions_found_within_k() -> None:

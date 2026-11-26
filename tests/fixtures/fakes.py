@@ -40,19 +40,22 @@ def fake_chunk(
     page: int | None = None,
     headings: tuple[str, ...] = (),
     captions: tuple[str, ...] = (),
+    more_pages: tuple[int, ...] = (),
 ) -> SimpleNamespace:
     """Imite un ``DocChunk`` Docling réel.
 
     Comme chez Docling : ``text`` ne contient PAS les titres ; ils sont dans ``meta.headings``
     (``None`` s'il n'y en a pas), la page dans ``meta.doc_items[].prov[].page_no``.
+    ``more_pages`` ajoute des éléments sur d'autres pages (passage à cheval sur plusieurs pages).
     """
-    provenance = [SimpleNamespace(page_no=page)] if page is not None else []
+    pages = ([page] if page is not None else []) + list(more_pages)
     return SimpleNamespace(
         text=text,
         meta=SimpleNamespace(
             headings=list(headings) or None,
             captions=list(captions) or None,
-            doc_items=[SimpleNamespace(prov=provenance)],
+            doc_items=[SimpleNamespace(prov=[SimpleNamespace(page_no=p)]) for p in pages]
+            or [SimpleNamespace(prov=[])],
         ),
     )
 
@@ -135,6 +138,7 @@ class InMemoryVectorStore:
                     page_number=chunk.page_number,
                     text=chunk.text,
                     score=_cosine(query, chunk.vector),
+                    page_end=chunk.page_end,
                 )
             )
         return sorted(results, key=lambda result: result.score, reverse=True)[:top_k]

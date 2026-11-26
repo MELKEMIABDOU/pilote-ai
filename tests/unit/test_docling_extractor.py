@@ -64,6 +64,17 @@ def test_extract_returns_numbered_chunks_with_their_page_and_headings(tmp_path: 
     ]
 
 
+def test_chunk_spanning_two_pages_keeps_the_whole_page_range(tmp_path: Path) -> None:
+    # Cas réel (section 8 du rapport Horizon) : l'introduction est page 4, le tableau page 5.
+    source = tmp_path / "order.pdf"
+    source.write_bytes(b"document")
+    chunker = FakeChunker([fake_chunk("Intro puis tableau.", page=4, more_pages=(5, 5))])
+
+    [chunk] = make_extractor(FakeConverter(), chunker).extract(source).chunks
+
+    assert (chunk.page_number, chunk.page_end) == (4, 5)
+
+
 def test_extract_rejects_remote_urls_before_calling_docling() -> None:
     converter = FakeConverter()
 

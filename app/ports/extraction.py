@@ -21,8 +21,9 @@ class ExtractedPage:
 @dataclass(frozen=True, slots=True)
 class ExtractedChunk:
     chunk_id: int
-    page_number: int | None
+    page_number: int | None  # première page du passage
     text: str
+    page_end: int | None = None  # dernière page (un passage peut être à cheval sur deux pages)
 
 
 @dataclass(frozen=True, slots=True)
