@@ -64,5 +64,5 @@ plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 # Dépendances optionnelles (extra `rag`), absentes en CI.
-module = ["docling.*", "docling_core.*", "transformers.*"]
+module = ["docling.*", "docling_core.*", "transformers.*", "torch.*"]
 ignore_missing_imports = true
