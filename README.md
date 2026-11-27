@@ -2,8 +2,33 @@
 
 Copilote qui prépare et contrôle les bons de commande B2B pour les équipes ADV.
 
-**État actuel :** l'outil RAG (recherche dans les documents) fonctionne en local.
-Pas encore fait : accès MCP/API pour les agents, bons de commande et règles de contrôle.
+**État actuel :**
+- l'outil RAG (recherche dans les documents) fonctionne en local, en ligne de commande et via
+  un serveur MCP pour les agents ;
+- le modèle de bon de commande et ses contrôles sont faits (voir « Contrôler une commande »).
+
+Pas encore fait : remplir la commande à partir du document, ERP, validation humaine.
+
+## Contrôler une commande
+
+```powershell
+uv run python -m scripts.demo_controle
+```
+
+Affiche deux bons de commande d'exemple et leurs anomalies. Les contrôles
+(`app/domain/rules.py`) sont déterministes, en `Decimal`, sans IA :
+
+| Contrôle | Gravité |
+|---|---|
+| Client absent, aucune ligne | bloquant |
+| Ligne sans référence, quantité ou prix ; quantité ≤ 0 ; prix négatif | bloquant |
+| Total de ligne ≠ quantité × prix (tolérance 0,01 € par ligne) | bloquant |
+| Total HT ou TTC écrit ≠ total calculé | bloquant |
+| Taux de TVA inconnu (autorisés : 20, 10, 5,5, 2,1 et 0 %) | bloquant |
+| TVA absente, TVA à 0 %, référence en double, n° de commande absent, livraison avant la commande | avertissement |
+
+« Bloquant » : la commande ne peut pas être saisie en l'état. « Avertissement » : à vérifier.
+Une ligne sans anomalie bloquante reste « prête » même si une autre ligne ne l'est pas.
 
 ## Installation
 
@@ -43,6 +68,52 @@ uv run python -m app.cli search "prix du riz" --client autre
 ```
 
 La base est dans `data/vector_store.db` (ignorée par git). La supprimer remet tout à zéro.
+
+## Utiliser le RAG depuis un agent (serveur MCP)
+
+Le serveur MCP « copilote » expose un outil **en lecture seule** : `chercher_documents(question,
+top_k)`. Il renvoie les passages avec leur source, leurs pages et leur score.
+
+**Le client est fixé par la configuration** (`COPILOTE_MCP_CLIENT_ID`), pas par l'agent :
+l'agent ne peut lire que les documents de ce client. L'indexation reste dans la CLI (un agent
+ne peut pas ajouter ni supprimer de documents).
+
+**1. Indexer d'abord** les documents du client avec la CLI (voir plus haut).
+
+**2. Tester sans aucun LLM, avec MCP Inspector** (gratuit, nécessite Node.js) :
+
+```powershell
+npx @modelcontextprotocol/inspector -e COPILOTE_MCP_CLIENT_ID=demo uv run python -m app.mcp_server
+```
+
+Une page web s'ouvre : « Connect », onglet « Tools », choisir `chercher_documents`, saisir une
+question, « Run Tool ».
+
+**3. Brancher sur un client MCP.** Remplacer `<chemin du projet>` par le dossier du projet.
+
+Claude Code :
+
+```powershell
+claude mcp add copilote -e COPILOTE_MCP_CLIENT_ID=demo -- uv --directory "<chemin du projet>" run python -m app.mcp_server
+```
+
+Claude Desktop, LM Studio et la plupart des clients : ajouter dans leur fichier de
+configuration MCP (pour Claude Desktop sous Windows : `%APPDATA%\Claude\claude_desktop_config.json`) :
+
+```json
+{
+  "mcpServers": {
+    "copilote": {
+      "command": "uv",
+      "args": ["--directory", "<chemin du projet>", "run", "python", "-m", "app.mcp_server"],
+      "env": { "COPILOTE_MCP_CLIENT_ID": "demo" }
+    }
+  }
+}
+```
+
+Le modèle est chargé au démarrage du serveur (quelques secondes) : le premier appel est donc
+aussi rapide que les suivants.
 
 ## Mesurer la qualité
 
@@ -108,6 +179,7 @@ app/
 ├── adapters/        # implémentations : Docling, Qwen3, sqlite-vec
 ├── application/     # cas d'usage : ingest_document, search_documents
 ├── api/             # routes FastAPI
+├── mcp_server/      # serveur MCP pour les agents
 ├── rag_container.py # seul endroit qui choisit les implémentations
 └── cli.py           # utilisation en ligne de commande
 scripts/             # évaluation de la qualité
