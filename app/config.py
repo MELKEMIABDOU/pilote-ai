@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
     vector_store_path: Path = Path("data/vector_store.db")
 
+    # Lecture des bons de commande (LLM local via Ollama)
+    llm_model: str = "qwen3:8b"
+    ollama_url: str = "http://127.0.0.1:11434"
+    # Couches du modèle sur la carte graphique (None = toutes). À baisser si le PC chauffe ou
+    # s'éteint sous la charge : plus lent, mais le GPU tire moins de puissance.
+    llm_gpu_layers: int | None = None
+
     # Serveur MCP : le SEUL client dont l'agent peut lire les documents (obligatoire pour le
     # lancer). Fixé par la configuration, jamais choisi par l'agent.
     mcp_client_id: str | None = None

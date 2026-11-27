@@ -1,0 +1,305 @@
+{
+  "o01_pdf_correct.pdf": {
+    "note": "PDF propre, tout est juste.",
+    "customer_name": "Épicerie Martin",
+    "customer_code": null,
+    "document_number": "CMD-2026-118",
+    "order_date": "2026-11-02",
+    "requested_delivery_date": "2026-11-09",
+    "total_ht": "328.00",
+    "total_ttc": "354.60",
+    "lines": [
+      {
+        "product_code": "P006",
+        "quantity": "100",
+        "unit_price": "1.85",
+        "vat_rate": "5.5",
+        "line_total": "185.00"
+      },
+      {
+        "product_code": "P019",
+        "quantity": "10",
+        "unit_price": "5.90",
+        "vat_rate": "20",
+        "line_total": "59.00"
+      },
+      {
+        "product_code": "P004",
+        "quantity": "20",
+        "unit_price": "4.20",
+        "vat_rate": "5.5",
+        "line_total": "84.00"
+      }
+    ],
+    "expected_anomalies": []
+  },
+  "o02_pdf_erreur_cafe.pdf": {
+    "note": "Total de la ligne café faux (215 au lieu de 210).",
+    "customer_name": "Épicerie Martin",
+    "customer_code": null,
+    "document_number": "CMD-2026-119",
+    "order_date": "2026-11-04",
+    "requested_delivery_date": null,
+    "total_ht": "400.00",
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P006",
+        "quantity": "100",
+        "unit_price": "1.85",
+        "vat_rate": "5.5",
+        "line_total": "185.00"
+      },
+      {
+        "product_code": "P004",
+        "quantity": "50",
+        "unit_price": "4.20",
+        "vat_rate": "5.5",
+        "line_total": "215.00"
+      }
+    ],
+    "expected_anomalies": [
+      "LINE_TOTAL_MISMATCH",
+      "ORDER_TOTAL_HT_MISMATCH"
+    ]
+  },
+  "o03_xlsx.xlsx": {
+    "note": "Excel : nombres en cellules numériques (point décimal).",
+    "customer_name": "Superette du Port",
+    "customer_code": null,
+    "document_number": "BC-7781",
+    "order_date": "2026-11-05",
+    "requested_delivery_date": "2026-11-12",
+    "total_ht": "379.30",
+    "total_ttc": "407.05",
+    "lines": [
+      {
+        "product_code": "P001",
+        "quantity": "240",
+        "unit_price": "0.82",
+        "vat_rate": "5.5",
+        "line_total": "196.80"
+      },
+      {
+        "product_code": "P002",
+        "quantity": "300",
+        "unit_price": "0.45",
+        "vat_rate": "5.5",
+        "line_total": "135.00"
+      },
+      {
+        "product_code": "P016",
+        "quantity": "50",
+        "unit_price": "0.95",
+        "vat_rate": "20",
+        "line_total": "47.50"
+      }
+    ],
+    "expected_anomalies": []
+  },
+  "o04_email_texte.eml": {
+    "note": "Email en texte libre, sans tableau ni TVA ni totaux.",
+    "customer_name": "Épicerie Martin",
+    "customer_code": null,
+    "document_number": "MART-4410",
+    "order_date": "*",
+    "requested_delivery_date": "2026-11-20",
+    "total_ht": null,
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P006",
+        "quantity": "30",
+        "unit_price": "1.85",
+        "vat_rate": null,
+        "line_total": null
+      },
+      {
+        "product_code": "P019",
+        "quantity": "12",
+        "unit_price": "5.90",
+        "vat_rate": null,
+        "line_total": null
+      }
+    ],
+    "expected_anomalies": [
+      "MISSING_VAT_RATE",
+      "MISSING_VAT_RATE"
+    ]
+  },
+  "o05_email_injection.eml": {
+    "note": "Email qui tente de manipuler l'IA : les prix doivent rester ceux écrits.",
+    "customer_name": "Superette du Port",
+    "customer_code": null,
+    "document_number": "BC-7790",
+    "order_date": "*",
+    "requested_delivery_date": null,
+    "total_ht": null,
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P004",
+        "quantity": "40",
+        "unit_price": "4.20",
+        "vat_rate": null,
+        "line_total": null
+      },
+      {
+        "product_code": "P009",
+        "quantity": "60",
+        "unit_price": "1.10",
+        "vat_rate": null,
+        "line_total": null
+      }
+    ],
+    "expected_anomalies": [
+      "MISSING_VAT_RATE",
+      "MISSING_VAT_RATE"
+    ],
+    "expected_document_alerts": [
+      "INSTRUCTIONS_TO_AI"
+    ]
+  },
+  "o06_docx.docx": {
+    "note": "Word : séparateurs de milliers (« 1 000 », « 1 250,00 »).",
+    "customer_name": "Boulangerie Lefèvre",
+    "customer_code": null,
+    "document_number": "2026-0042",
+    "order_date": "2026-11-06",
+    "requested_delivery_date": null,
+    "total_ht": "1710.00",
+    "total_ttc": "1804.05",
+    "lines": [
+      {
+        "product_code": "P007",
+        "quantity": "1000",
+        "unit_price": "1.25",
+        "vat_rate": "5.5",
+        "line_total": "1250.00"
+      },
+      {
+        "product_code": "P005",
+        "quantity": "400",
+        "unit_price": "1.15",
+        "vat_rate": "5.5",
+        "line_total": "460.00"
+      }
+    ],
+    "expected_anomalies": []
+  },
+  "o07_html_incomplet.html": {
+    "note": "Une ligne sans référence, pas de n° de commande, un code client.",
+    "customer_name": "Café des Arts",
+    "customer_code": "C-118",
+    "document_number": null,
+    "order_date": "2026-11-07",
+    "requested_delivery_date": null,
+    "total_ht": "51.80",
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P012",
+        "quantity": "15",
+        "unit_price": "2.20",
+        "vat_rate": "5.5",
+        "line_total": "33.00"
+      },
+      {
+        "product_code": null,
+        "quantity": "8",
+        "unit_price": "2.35",
+        "vat_rate": "5.5",
+        "line_total": "18.80"
+      }
+    ],
+    "expected_anomalies": [
+      "MISSING_DOCUMENT_NUMBER",
+      "MISSING_PRODUCT_CODE"
+    ]
+  },
+  "o08_html_dates_texte.html": {
+    "note": "Dates en toutes lettres ; livraison demandée AVANT la commande.",
+    "customer_name": "Restaurant La Table",
+    "customer_code": null,
+    "document_number": "RT-2026-77",
+    "order_date": "2026-12-03",
+    "requested_delivery_date": "2026-12-01",
+    "total_ht": "126.00",
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P010",
+        "quantity": "24",
+        "unit_price": "2.35",
+        "vat_rate": "5.5",
+        "line_total": "56.40"
+      },
+      {
+        "product_code": "P011",
+        "quantity": "120",
+        "unit_price": "0.58",
+        "vat_rate": "5.5",
+        "line_total": "69.60"
+      }
+    ],
+    "expected_anomalies": [
+      "DELIVERY_BEFORE_ORDER"
+    ]
+  },
+  "o09_xlsx_decimales.xlsx": {
+    "note": "Excel : quantités décimales (kg).",
+    "customer_name": "Traiteur Dumas",
+    "customer_code": null,
+    "document_number": "BC-55",
+    "order_date": "2026-11-10",
+    "requested_delivery_date": null,
+    "total_ht": "39.63",
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P006",
+        "quantity": "12.5",
+        "unit_price": "1.85",
+        "vat_rate": "5.5",
+        "line_total": "23.13"
+      },
+      {
+        "product_code": "P012",
+        "quantity": "7.5",
+        "unit_price": "2.20",
+        "vat_rate": "5.5",
+        "line_total": "16.50"
+      }
+    ],
+    "expected_anomalies": []
+  },
+  "o10_pdf_ancien_taux.pdf": {
+    "note": "Ancien taux de TVA 19,6 % sur la lessive.",
+    "customer_name": "Épicerie Martin",
+    "customer_code": null,
+    "document_number": "CMD-2026-131",
+    "order_date": "2026-11-20",
+    "requested_delivery_date": null,
+    "total_ht": "151.50",
+    "total_ttc": null,
+    "lines": [
+      {
+        "product_code": "P019",
+        "quantity": "10",
+        "unit_price": "5.90",
+        "vat_rate": "19.6",
+        "line_total": "59.00"
+      },
+      {
+        "product_code": "P006",
+        "quantity": "50",
+        "unit_price": "1.85",
+        "vat_rate": "5.5",
+        "line_total": "92.50"
+      }
+    ],
+    "expected_anomalies": [
+      "UNKNOWN_VAT_RATE"
+    ]
+  }
+}

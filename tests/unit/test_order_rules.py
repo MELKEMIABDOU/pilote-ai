@@ -137,6 +137,19 @@ def test_unknown_vat_rate_is_blocked() -> None:
     assert codes(check_order(order)) == ["UNKNOWN_VAT_RATE"]
 
 
+def test_ttc_is_not_given_when_a_vat_rate_is_invalid() -> None:
+    order = make_order(make_line(vat_rate="19.6"), total_ht="185.00", total_ttc=None)
+
+    check = check_order(order)
+
+    assert order.computed_total_ttc is not None  # le modèle sait le calculer…
+    assert check.reliable_total_ttc is None  # …mais le résultat serait faux
+
+
+def test_ttc_is_given_for_a_correct_order() -> None:
+    assert check_order(make_order()).reliable_total_ttc == Decimal("265.98")
+
+
 def test_zero_vat_rate_asks_for_the_exemption_reason() -> None:
     order = make_order(make_line(vat_rate="0"), total_ht="185.00", total_ttc="185.00")
 

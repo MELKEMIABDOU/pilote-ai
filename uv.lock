@@ -443,6 +443,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "reportlab" },
     { name = "ruff" },
 ]
 
@@ -468,6 +469,7 @@ dev = [
     { name = "pre-commit", specifier = ">=3.7.0" },
     { name = "pytest", specifier = ">=8.2.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
+    { name = "reportlab", specifier = ">=4.0" },
     { name = "ruff", specifier = ">=0.4.0" },
 ]
 
@@ -2794,6 +2796,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ea/62/71b6e73cf998220b4bd8fc3a651b559bd28860a6290d3f760572ce1188eb/regex-2026.11.24-cp315-cp315t-win32.whl", hash = "sha256:b1cbb75f9c5aacbf4e38db3bb3d1bbaa14f7f49b3ee444a654d2e2512fb0bb5b", size = 277571, upload-time = "2026-11-25T03:27:57.147Z" },
     { url = "https://files.pythonhosted.org/packages/02/9b/720d183a964818265d1756e6beb8dc99f3f15412da8f768dc9ef5a59ee6c/regex-2026.11.24-cp315-cp315t-win_amd64.whl", hash = "sha256:65946365631c77a57ecadc99f10f158ba0149a42279f0bedd3f4520aeb9ff11c", size = 287045, upload-time = "2026-11-25T03:27:58.584Z" },
     { url = "https://files.pythonhosted.org/packages/32/e2/cbbf78cf267c5886981682cb6aee8d30b49180e4b556ea9a4f0800e1cd93/regex-2026.11.24-cp315-cp315t-win_arm64.whl", hash = "sha256:3338eb86ba7294b59a6c31281e8f50db75eda9f9c76991052577c6aa5f14954d", size = 287871, upload-time = "2026-11-25T03:27:59.64Z" },
+]
+
+[[package]]
+name = "reportlab"
+version = "5.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "charset-normalizer" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/b8/9fa1c49fbc6fb9f4c9f2445123af346792b7fef220152004b13ec51b37ee/reportlab-5.1.2.tar.gz", hash = "sha256:2d2785281fc435e39fb33eee7f8c10b10ffee626dad9de360310390aacaf2f38", size = 3794521, upload-time = "2026-11-25T16:08:24.398Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/bb/603afbaa72589bd9519bef5d631c099407a6853465814e6a22b77a7b12d3/reportlab-5.1.2-py3-none-any.whl", hash = "sha256:8ec602de18aff4db94f3b5846f877e66edbcb42969c4100b2ae5dd69a7f3e84e", size = 2017267, upload-time = "2026-11-25T16:07:57.882Z" },
 ]
 
 [[package]]

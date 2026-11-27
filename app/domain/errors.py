@@ -20,6 +20,10 @@ class EmbeddingError(CopiloteError):
     """Le modèle d'embeddings a renvoyé un résultat inattendu."""
 
 
+class LLMError(CopiloteError):
+    """Le modèle de langage est injoignable ou a renvoyé une réponse inutilisable."""
+
+
 class VectorStoreError(CopiloteError):
     """Le stockage vectoriel est incohérent (ex. base créée avec un autre modèle d'embeddings)."""
 

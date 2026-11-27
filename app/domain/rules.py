@@ -23,6 +23,9 @@ BLOCKING, WARNING = Severity.BLOCKING, Severity.WARNING
 # ex. livraison intracommunautaire ou export — à vérifier, d'où un avertissement dédié).
 FRENCH_VAT_RATES = frozenset(Decimal(rate) for rate in ("20", "10", "5.5", "2.1", "0"))
 
+# Anomalies qui rendent le TTC calculé faux.
+_VAT_BLOCKING_CODES = frozenset({"UNKNOWN_VAT_RATE"})
+
 
 class RuleSettings(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -44,6 +47,17 @@ class OrderCheck(BaseModel):
     def is_ready(self) -> bool:
         """Prête à saisir : aucune anomalie bloquante (les avertissements n'empêchent rien)."""
         return not any(anomaly.severity is BLOCKING for anomaly in self.anomalies)
+
+    @property
+    def reliable_total_ttc(self) -> Decimal | None:
+        """Le TTC calculé, sauf si un taux de TVA est invalide.
+
+        Un TTC calculé avec un taux faux (ex. 19,6 %) aurait l'air juste : un ADV pressé
+        pourrait le recopier. On préfère ne rien afficher et dire pourquoi.
+        """
+        if any(a.code in _VAT_BLOCKING_CODES for a in self.anomalies):
+            return None
+        return self.order.computed_total_ttc
 
     @property
     def blocked_line_numbers(self) -> frozenset[int]:

@@ -67,13 +67,15 @@ def main() -> None:
             )
         if order.computed_total_ht is not None:
             print(f"Total HT calculé : {format_eur(order.computed_total_ht)}")
-        for vat in order.vat_breakdown or ():
-            print(
-                f"  TVA {format_rate(vat.rate)} sur {format_eur(vat.base)} : "
-                f"{format_eur(vat.amount)}"
-            )
-        if order.computed_total_ttc is not None:
-            print(f"Total TTC calculé : {format_eur(order.computed_total_ttc)}")
+        if check.reliable_total_ttc is not None:
+            for vat in order.vat_breakdown or ():
+                print(
+                    f"  TVA {format_rate(vat.rate)} sur {format_eur(vat.base)} : "
+                    f"{format_eur(vat.amount)}"
+                )
+            print(f"Total TTC calculé : {format_eur(check.reliable_total_ttc)}")
+        elif order.computed_total_ttc is not None:
+            print("Total TTC non calculable : taux de TVA à corriger.")
         if check.anomalies:
             print("Anomalies :")
             for anomaly in check.anomalies:

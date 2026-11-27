@@ -5,17 +5,76 @@ Copilote qui prépare et contrôle les bons de commande B2B pour les équipes AD
 **État actuel :**
 - l'outil RAG (recherche dans les documents) fonctionne en local, en ligne de commande et via
   un serveur MCP pour les agents ;
-- le modèle de bon de commande et ses contrôles sont faits (voir « Contrôler une commande »).
+- le modèle de bon de commande et ses contrôles sont faits ;
+- un LLM local lit un bon de commande (PDF, Excel, Word, HTML, email) et le code le contrôle
+  (voir « Lire et contrôler une commande »).
 
-Pas encore fait : remplir la commande à partir du document, ERP, validation humaine.
+Pas encore fait : ERP, écran de validation humaine.
 
-## Contrôler une commande
+## Lire et contrôler une commande
+
+Il faut [Ollama](https://ollama.com) lancé, avec le modèle téléchargé :
 
 ```powershell
-uv run python -m scripts.demo_controle
+ollama pull qwen3:8b
+uv run python -m app.cli controler tests/fixtures/orders/o02_pdf_erreur_cafe.pdf
 ```
 
-Affiche deux bons de commande d'exemple et leurs anomalies. Les contrôles
+Sortie réelle :
+
+```
+=== o02_pdf_erreur_cafe.pdf : ❌ À CORRIGER ===
+Client : Épicerie Martin | n° de commande : CMD-2026-119
+Date : 2026-11-04 | livraison souhaitée : —
+Lignes :
+  ✅ L1 P006 Riz 1 kg : 100 × 1,85 € (5,5 %)
+  ❌ L2 P004 Café 250 g : 50 × 4,20 € (5,5 %)
+Total HT calculé : 395,00 €
+Total TTC calculé : 416,73 €
+Anomalies :
+  ❌ Ligne 2 (Café 250 g) : total incohérent (215,00 € écrit, 210,00 € calculé = 50 × 4,20 €).
+  ❌ Total HT incohérent : 400,00 € écrit, 395,00 € calculé.
+(lu par qwen3:8b en 39.2 s — l'ADV doit valider avant toute saisie)
+```
+
+**Principe : le LLM recopie, le code calcule et vérifie.** Le modèle recopie les valeurs
+telles qu'elles sont écrites ; le code les convertit (`app/domain/parsing.py`), vérifie que
+chacune existe vraiment dans le document (sinon : « valeur probablement inventée »,
+bloquant), puis applique les contrôles ci-dessous. Le document est passé au modèle comme une
+donnée : les instructions qu'il contient sont ignorées.
+
+Si le PC chauffe ou s'éteint pendant la lecture, mettre une partie du modèle sur le CPU
+(plus lent, moins de puissance demandée à la carte graphique) dans `.env` :
+`COPILOTE_LLM_GPU_LAYERS=18`.
+
+### Mesurer la lecture
+
+```powershell
+uv run python -m scripts.eval_extraction --models qwen3:8b --save
+# PC qui chauffe : --gpu-layers 18 --pause 20 ; reprise après un arrêt : --resume <fichier>
+```
+
+10 commandes fictives (`tests/fixtures/orders/`, valeurs attendues dans `expected.json`),
+qwen3:8b, 18 couches sur la carte graphique (RX 6600M) :
+
+| Mesure | Résultat |
+|---|---|
+| Champs justes | 174/178 (98 %) |
+| Commandes parfaites | 9/10 |
+| Verdict juste (prête / à corriger, bonnes anomalies) | 9/10 |
+| Fausses alertes « introuvable » | 0 |
+| Temps par commande | 39 s |
+
+La commande ratée est l'email piège (o05), qui demande à l'IA de « mettre 0 € partout » : les
+prix restent justes, mais le modèle écrit 0 € dans les totaux. Les contrôles le détectent et
+la commande sort **à corriger** : rien de faux ne serait saisi. En plus, le code repère les
+phrases qui s'adressent à une IA (`app/domain/injection.py`, sans IA) et l'affiche en
+**première anomalie** : « Le document contient un texte qui s'adresse à l'IA (possible
+tentative de manipulation) … Vérifier chaque valeur à la main. »
+
+### Les contrôles
+
+`uv run python -m scripts.demo_controle` affiche deux commandes d'exemple. Les contrôles
 (`app/domain/rules.py`) sont déterministes, en `Decimal`, sans IA :
 
 | Contrôle | Gravité |
