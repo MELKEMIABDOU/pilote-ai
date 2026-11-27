@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
     vector_store_path: Path = Path("data/vector_store.db")
 
+    # Serveur MCP : le SEUL client dont l'agent peut lire les documents (obligatoire pour le
+    # lancer). Fixé par la configuration, jamais choisi par l'agent.
+    mcp_client_id: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:

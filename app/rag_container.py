@@ -16,6 +16,7 @@ from app.adapters.vector_store.sqlite_vec import SqliteVecStore
 from app.application.ingest_document import IngestDocument
 from app.application.search_documents import SearchDocuments
 from app.config import Settings, get_settings
+from app.ports.embeddings import Embedder
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +24,11 @@ class RagServices:
     ingest: IngestDocument
     search: SearchDocuments
     _store: SqliteVecStore
+    _embedder: Embedder
+
+    def warm_up(self) -> None:
+        """Charge le modèle d'embeddings tout de suite plutôt qu'au premier appel."""
+        self._embedder.embed_query("préchargement du modèle")
 
     def close(self) -> None:
         self._store.close()
@@ -52,4 +58,5 @@ def build_rag_services(settings: Settings | None = None) -> RagServices:
         ingest=IngestDocument(extractor, embedder, store),
         search=SearchDocuments(embedder, store),
         _store=store,
+        _embedder=embedder,
     )
